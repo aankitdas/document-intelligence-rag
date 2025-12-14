@@ -1,0 +1,14 @@
+fastapi>=0.124.4
+uvicorn[standard]>=0.38.0
+pydantic>=2.12.5
+python-multipart>=0.0.20
+python-dotenv>=1.2.1
+requests>=2.32.5
+chromadb[cpu]>=1.3.7
+groq>=0.37.1
+pdfplumber>=0.11.8
+pypdf2>=3.0.1
+numpy>=2.3.5
+pandas>=2.3.3
+# sentence-transformers will be installed at runtime if needed
+sentence-transformers>=5.2.0

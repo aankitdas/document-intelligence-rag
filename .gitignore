@@ -1,0 +1,26 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+.env
+notebooks/.chromadb_test/
+.chromadb/
+__pycache__/
+*.pyc
+.DS_Store
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.pytest_cache
+.coverage
+htmlcov/
+node_modules/
+.streamlit/
+papers/

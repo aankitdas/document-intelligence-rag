@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Local data, logs, temp
+*.log
+*.sqlite3
+*.db
+tmp/
+temp/
+.cache/
+.huggingface/
+models/
+papers/
+
+# Jupyter notebooks and outputs (if not needed in prod)
+.ipynb_checkpoints/
+*.ipynb
+notebooks/
+
+# Git and version control
+.git/
+.gitignore
+
+# OS generated files
+.DS_Store
+Thumbs.db
