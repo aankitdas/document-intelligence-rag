@@ -14,6 +14,9 @@ pinned: false
 Production-grade Retrieval-Augmented Generation (RAG) system for analyzing research papers and documents with AI.
 Ask questions about your PDFs. Get answers grounded in your documents with source attribution.
 
+# Link
+Enjoy: https://huggingface.co/spaces/aankitdas/doc-intelligence-rag
+
 ## Features
 
 - PDF Ingestion: Extract text from PDFs using PDFProcessor
