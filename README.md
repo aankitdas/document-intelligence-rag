@@ -7,6 +7,7 @@ sdk: docker
 sdk_version: "1.0"
 app_file: src/main.py
 pinned: false
+
 ---
 
 # Document Intelligence RAG System
