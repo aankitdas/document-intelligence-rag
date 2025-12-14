@@ -1,3 +1,14 @@
+---
+title: Document Intelligence RAG
+emoji: 📚
+colorFrom: blue
+colorTo: purple
+sdk: docker
+sdk_version: "1.0"
+app_file: src/main.py
+pinned: false
+---
+
 # Document Intelligence RAG System
 
 Production-grade Retrieval-Augmented Generation (RAG) system for analyzing research papers and documents with AI.
