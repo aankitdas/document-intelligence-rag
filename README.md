@@ -103,3 +103,6 @@ curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{
 | Backend          | FastAPI                       | Production-grade, async, automatic API docs                         |
 | Frontend         | HTML / CSS / JavaScript       | Simple setup, no build tooling required                             |
 | Package Manager  | UV                            | Fast dependency resolution, deterministic environments              |
+
+
+#### Testing Github Actions sync to HF spaces 
