@@ -329,7 +329,7 @@ async def query(request: QueryRequest):
     if pipeline.vector_store.size() == 0:
         raise HTTPException(
             status_code=400,
-            detail="No documents ingested yet. Use /ingest endpoint first."
+            detail="No documents ingested yet. Upload documents first."
         )
     
     try:
