@@ -77,11 +77,11 @@ class RAGEvaluator:
         self._load_existing_results()
     
     def _load_existing_results(self):
-        """Load existing results from disk."""
+        """Load existing results from disk or HF raw URL."""
         results_file = self.results_dir / "results.jsonl"
-        print("CWD:", Path.cwd())
-        print("Expected results path:", (self.results_dir / "results.jsonl").resolve())
-        print("Exists:", (self.results_dir / "results.jsonl").exists())
+        loaded = False
+
+        # Try local file first
         if results_file.exists():
             try:
                 with open(results_file, 'r') as f:
@@ -89,10 +89,23 @@ class RAGEvaluator:
                         data = json.loads(line)
                         data['hallucination_detected'] = bool(data['hallucination_detected'])
                         self.results.append(EvaluationResult(**data))
+                loaded = True
             except Exception as e:
-                raise RuntimeError(
-                    f"Failed to load evaluation results from {results_file}"
-                ) from e
+                print(f"Warning: Could not load local results: {e}")
+
+        # If no local file or failed, try HF raw URL
+        if not loaded:
+            hf_url = "https://huggingface.co/spaces/aankitdas/doc-intelligence-rag/raw/main/evaluation_results/results.jsonl"
+            try:
+                resp = requests.get(hf_url)
+                resp.raise_for_status()
+                for line in resp.text.strip().split("\n"):
+                    data = json.loads(line)
+                    data['hallucination_detected'] = bool(data['hallucination_detected'])
+                    self.results.append(EvaluationResult(**data))
+                print(f"Loaded {len(self.results)} results from HF raw URL")
+            except Exception as e:
+                print(f"Warning: Could not load results from HF: {e}")
     
     def add_result(self, result: EvaluationResult) -> None:
         """Add evaluation result."""
