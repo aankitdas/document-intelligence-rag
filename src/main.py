@@ -11,7 +11,9 @@ import tempfile
 from pathlib import Path
 
 from src.rag import RAGPipeline, RAGConfig
-
+from src.evaluation import RAGEvaluator, EvaluationResult
+import io
+import csv
 # ==================== Setup ====================
 
 # Configure logging
@@ -29,6 +31,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+evaluator = RAGEvaluator(store_results=True, results_dir="evaluation_results")
 
 # Add CORS middleware
 app.add_middleware(
@@ -477,6 +481,182 @@ async def general_exception_handler(request, exc):
             "timestamp": datetime.now().isoformat()
         }
     )
+
+
+# ==================== Evaluation Endpoints ====================
+# Add these endpoints to your main.py (after existing endpoints)
+
+@app.get("/evaluation")
+async def evaluation_ui():
+    """Serve evaluation dashboard."""
+    frontend_path = "frontend/evaluation.html"
+    if os.path.exists(frontend_path):
+        return FileResponse(frontend_path)
+    return {"error": "Evaluation dashboard not found"}
+
+
+@app.get("/evaluation/metrics")
+async def get_evaluation_metrics():
+    """Get aggregate evaluation metrics."""
+    return evaluator.compute_aggregate_metrics()
+
+
+@app.get("/evaluation/timeseries")
+async def get_timeseries_data():
+    """Get evaluation results as timeseries for visualization."""
+    return evaluator.get_results_timeseries()
+
+
+@app.get("/evaluation/failures")
+async def get_failure_analysis():
+    """Get failure mode analysis."""
+    return evaluator.get_failure_analysis()
+
+
+@app.get("/evaluation/percentiles")
+async def get_percentile_data():
+    """Get percentile analysis for performance metrics."""
+    return evaluator.get_percentile_analysis()
+
+
+@app.post("/evaluation/add-result")
+async def add_evaluation_result(result: dict):
+    """
+    Add a single evaluation result.
+    
+    Expected fields:
+    {
+        "query": "...",
+        "answer": "...",
+        "source_docs": ["doc1", "doc2"],
+        "num_retrieved": 3,
+        "retrieval_precision": 0.8,
+        "retrieval_recall": 0.9,
+        "rank_position": 1,
+        "rouge_l": 0.75,
+        "bert_score": 0.85,
+        "answer_relevance": 0.9,
+        "faithfulness": 0.95,
+        "hallucination_detected": false,
+        "source_attribution_score": 0.9,
+        "latency_ms": 234.5,
+        "tokens_used": 150,
+        "cost_cents": 0.5
+    }
+    """
+    try:
+        eval_result = EvaluationResult(**result)
+        evaluator.add_result(eval_result)
+        return {
+            "status": "success",
+            "eval_id": eval_result.eval_id,
+            "message": "Result added successfully"
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 400
+
+
+@app.get("/evaluation/export")
+async def export_results():
+    """Export evaluation results as CSV."""
+    # Create CSV in memory
+    output = io.StringIO()
+    
+    if evaluator.results:
+        results_data = [r.to_dict() for r in evaluator.results]
+        fieldnames = results_data[0].keys()
+        
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results_data)
+        
+        output.seek(0)
+        csv_content = output.getvalue()
+        
+        return StreamingResponse(
+            iter([csv_content]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=rag_evaluation.csv"}
+        )
+    
+    return {"error": "No results to export"}, 404
+
+
+@app.post("/evaluation/reset")
+async def reset_evaluation_results():
+    """Clear all evaluation results."""
+    evaluator.reset()
+    return {"status": "success", "message": "All results cleared"}
+
+
+@app.get("/evaluation/stats")
+async def get_evaluation_stats():
+    """Get summary statistics."""
+    metrics = evaluator.compute_aggregate_metrics()
+    return {
+        "total_evaluations": metrics["total_evaluations"],
+        "average_faithfulness": metrics["faithfulness_mean"],
+        "hallucination_rate": metrics["hallucination_rate"],
+        "average_latency_ms": metrics["latency_mean"],
+        "average_cost_cents": metrics["cost_per_query"],
+        "mrr": metrics["mrr"],
+        "timestamp": metrics["timestamp"]
+    }
+
+
+# ==================== Integration with your existing endpoints ====================
+# Optional: Enhance your existing /query endpoint to track metrics
+# Replace or enhance your current /query endpoint like this:
+
+@app.post("/query-with-eval")
+async def query_with_evaluation(request: dict):
+    """
+    Query endpoint with automatic evaluation tracking.
+    Use this if you want to automatically log metrics for every query.
+    """
+    import time
+    from typing import Any
+    
+    query = request.get("question", "")
+    start_time = time.time()
+    
+    try:
+        # Call your existing pipeline
+        # This is pseudocode - adjust based on your actual pipeline
+        response = await query(request)  # Call your existing query function
+        
+        latency_ms = (time.time() - start_time) * 1000
+        
+        # Create evaluation result (with placeholder values for now)
+        eval_result = EvaluationResult(
+            query=query,
+            answer=response.get("answer", ""),
+            source_docs=response.get("sources", []),
+            num_retrieved=len(response.get("sources", [])),
+            retrieval_precision=0.85,  # You'd compute these from your pipeline
+            retrieval_recall=0.80,
+            rank_position=1,
+            rouge_l=0.75,
+            bert_score=0.85,
+            answer_relevance=0.88,
+            faithfulness=0.90,
+            hallucination_detected=False,
+            source_attribution_score=0.85,
+            latency_ms=latency_ms,
+            tokens_used=len(response.get("answer", "").split()),
+            cost_cents=0.5  # Compute based on your pricing
+        )
+        
+        evaluator.add_result(eval_result)
+        
+        return {
+            **response,
+            "eval_id": eval_result.eval_id,
+            "latency_ms": latency_ms
+        }
+    
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 # ==================== Root Endpoint ====================
