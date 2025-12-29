@@ -69,8 +69,9 @@ class RAGEvaluator:
             store_results: Whether to store results to disk
             results_dir: Directory to store evaluation results
         """
+        BASE_DIR = Path(__file__).resolve().parents[2]
         self.store_results = store_results
-        self.results_dir = Path(results_dir)
+        self.results_dir = BASE_DIR / results_dir
         self.results_dir.mkdir(exist_ok=True)
         self.results: List[EvaluationResult] = []
         self._load_existing_results()
@@ -78,6 +79,9 @@ class RAGEvaluator:
     def _load_existing_results(self):
         """Load existing results from disk."""
         results_file = self.results_dir / "results.jsonl"
+        print("CWD:", Path.cwd())
+        print("Expected results path:", (self.results_dir / "results.jsonl").resolve())
+        print("Exists:", (self.results_dir / "results.jsonl").exists())
         if results_file.exists():
             try:
                 with open(results_file, 'r') as f:
@@ -86,7 +90,9 @@ class RAGEvaluator:
                         data['hallucination_detected'] = bool(data['hallucination_detected'])
                         self.results.append(EvaluationResult(**data))
             except Exception as e:
-                print(f"Warning: Could not load results: {e}")
+                raise RuntimeError(
+                    f"Failed to load evaluation results from {results_file}"
+                ) from e
     
     def add_result(self, result: EvaluationResult) -> None:
         """Add evaluation result."""
