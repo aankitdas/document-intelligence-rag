@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, asdict
 import numpy as np
 from pathlib import Path
+import requests
 
 
 @dataclass
