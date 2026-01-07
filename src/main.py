@@ -10,6 +10,12 @@ from datetime import datetime
 import tempfile
 from pathlib import Path
 
+from src.evaluation.ragas_integration import (
+    RagasReadyPipeline,
+    RagasEvaluator,
+    init_ragas_router,
+)
+
 from src.rag import RAGPipeline, RAGConfig
 from src.evaluation import RAGEvaluator, EvaluationResult
 import io
@@ -49,7 +55,8 @@ if os.path.exists("frontend"):
 
 # Global pipeline instance
 pipeline: Optional[RAGPipeline] = None
-
+ragas_pipeline = None
+ragas_evaluator = None
 
 # ==================== Pydantic Models ====================
 
@@ -108,7 +115,7 @@ class StatsResponse(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize pipeline on startup."""
-    global pipeline
+    global pipeline, ragas_pipeline, ragas_evaluator
     
     logger.info("=" * 60)
     logger.info("Starting Document Intelligence RAG API")
@@ -124,8 +131,18 @@ async def startup_event():
         
         # Initialize pipeline (automatically uses get_embeddings_client())
         pipeline = RAGPipeline(config=config)
-        
         logger.info("✓ Pipeline initialized successfully")
+
+        # RAGAS integration
+        ragas_pipeline = RagasReadyPipeline(pipeline)
+        logger.info("✓ Ragas pipeline initialized successfully")
+        ragas_evaluator = RagasEvaluator()
+        logger.info("✓ Ragas evaluator initialized successfully")
+        ragas_router = init_ragas_router(ragas_pipeline, ragas_evaluator)
+        app.include_router(ragas_router, prefix="/ragas", tags=["RAGAS Evaluation"])
+        logger.info("✓ Ragas evaluator initialized successfully")
+
+
         logger.info(f"✓ Embedding backend: {config.embedding_backend}")
         logger.info(f"✓ API ready at http://localhost:8000")
         logger.info(f"✓ Interactive docs at http://localhost:8000/docs")
@@ -429,7 +446,7 @@ async def reset_system():
     Returns:
         Reset confirmation
     """
-    global pipeline
+    global pipeline, ragas_evaluator
     
     if not pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
@@ -439,12 +456,15 @@ async def reset_system():
         
         # Clear vector store
         pipeline.vector_store.clear()
+        if ragas_evaluator:
+            ragas_evaluator.results = []
+            logger.info("✓ RAGAS evaluations cleared")
         
         logger.info("✓ System reset complete")
         
         return {
             "status": "success",
-            "message": "All documents and embeddings cleared",
+            "message": "All documents, embeddings, and RAGAS evaluations cleared",
             "chunks_remaining": 0,
             "timestamp": datetime.now().isoformat()
         }
@@ -658,6 +678,16 @@ async def query_with_evaluation(request: dict):
     except Exception as e:
         return {"error": str(e)}, 500
 
+
+# ===================== RAGAS Endpoints ====================
+
+@app.get("/ragas-demo")
+async def ragas_demo_page():
+    """Serve RAGAS evaluation demo page."""
+    frontend_path = "frontend/ragas.html"
+    if os.path.exists(frontend_path):
+        return FileResponse(frontend_path)
+    return {"error": "RAGAS demo page not found"}
 
 # ==================== Root Endpoint ====================
 

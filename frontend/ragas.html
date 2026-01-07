@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAGAS Evaluation - Document Intelligence RAG</title>
+    <style>
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            z-index: 100;
+            transition: background 0.15s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--surface-subtle);
+        }
+
+        /* Button group */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn-small {
+            padding: 8px 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn-small:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-small.secondary {
+            background: var(--surface-subtle);
+            color: var(--text-main);
+            border: 1px solid var(--border-soft);
+        }
+
+        .btn-small.secondary:hover {
+            background: var(--border-soft);
+        }
+
+        /* Same design tokens as index.html */
+        :root {
+            --surface: #ffffff;
+            --surface-subtle: #fafafa;
+            --bg-main: #f5f7fb;
+            --card-bg: #ffffff;
+            --accent: #2563eb;
+            --accent-soft: #eff6ff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-soft: #e5e7eb;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #f59e0b;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        [data-theme="dark"] {
+            --surface: #1f2937;
+            --surface-subtle: #111827;
+            --bg-main: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #60a5fa;
+            --accent-soft: #1e3a5f;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-soft: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-main);
+            min-height: 100vh;
+            padding: 24px;
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .nav-links a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .query-section {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .query-section input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            background: var(--surface);
+            color: var(--text-main);
+        }
+
+        .query-section input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .status.loading {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: var(--error);
+        }
+
+        .status.success {
+            background: #f0fdf4;
+            color: var(--success);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Answer Section */
+        .answer-box {
+            background: var(--surface-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .answer-box p {
+            line-height: 1.6;
+        }
+
+        /* RAGAS Scores */
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .score-card {
+            background: var(--surface-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .score-value.high {
+            color: var(--success);
+        }
+
+        .score-value.medium {
+            color: var(--warning);
+        }
+
+        .score-value.low {
+            color: var(--error);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 8px;
+            background: var(--border-soft);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.high {
+            background: var(--success);
+        }
+
+        .progress-fill.medium {
+            background: var(--warning);
+        }
+
+        .progress-fill.low {
+            background: var(--error);
+        }
+
+        /* Aggregate Stats */
+        .aggregate-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 16px;
+            background: var(--surface-subtle);
+            border-radius: var(--radius-md);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Sources */
+        .sources-section {
+            margin-top: 20px;
+        }
+
+        .sources-section h3 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .source-item {
+            background: var(--surface-subtle);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .source-similarity {
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: var(--accent-soft);
+            border-left: 4px solid var(--accent);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+        }
+
+        .info-box p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Time display */
+        .time-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .scores-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .query-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="theme-toggle" id="themeToggle">🌙 Dark mode</button>
+
+    <div class="container">
+        <header>
+            <h1>🔬 RAGAS Evaluation</h1>
+            <p>Test the RAG pipeline and see real-time quality metrics</p>
+            <div class="nav-links">
+                <a href="/">← Back to Main</a>
+                <a href="/evaluation">View Full Dashboard</a>
+            </div>
+        </header>
+
+        <!-- Query Section -->
+        <div class="card">
+            <h2>Ask a Question</h2>
+            <div class="info-box">
+                <p>Enter a question to query the RAG system. RAGAS will evaluate the response for
+                    <strong>Faithfulness</strong> (is the answer grounded in context?) and <strong>Context
+                        Precision</strong> (were the retrieved chunks useful?).
+                </p>
+            </div>
+            <div class="query-section">
+                <input type="text" id="queryInput" placeholder="e.g., What is machine learning?"
+                    onkeypress="if(event.key === 'Enter') runEvaluation()">
+                <button class="btn" id="evalBtn" onclick="runEvaluation()">
+                    🔍 Query & Evaluate
+                </button>
+            </div>
+            <div id="status" class="status hidden"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="card hidden">
+            <h2>📊 RAGAS Evaluation Results</h2>
+
+            <!-- Scores -->
+            <div class="scores-grid">
+                <div class="score-card">
+                    <div class="score-label">Faithfulness</div>
+                    <div class="score-value" id="faithScore">-</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="faithBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">Context Precision</div>
+                    <div class="score-value" id="precisionScore">-</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="precisionBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">RAGAS Score</div>
+                    <div class="score-value" id="ragasScore">-</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="ragasBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Answer -->
+            <h3 style="margin-bottom: 12px;">📝 Generated Answer</h3>
+            <div class="answer-box">
+                <p id="answerText">-</p>
+            </div>
+
+            <!-- Sources -->
+            <div class="sources-section">
+                <h3>📚 Retrieved Sources</h3>
+                <div id="sourcesList"></div>
+            </div>
+
+            <div class="time-info">
+                <span id="responseTime"></span> | <span id="evalTime"></span>
+            </div>
+        </div>
+
+        <!-- Aggregate Stats -->
+        <div class="card">
+            <h2>📈 Aggregate Statistics</h2>
+            <div class="button-group">
+                <button class="btn-small" onclick="loadAggregateStats()">🔄 Refresh</button>
+                <button class="btn-small secondary" onclick="clearRagasResults()">🗑️ Clear Results</button>
+            </div>
+            <div class="aggregate-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalEvals">0</div>
+                    <div class="stat-label">Total Evaluations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgFaith">-</div>
+                    <div class="stat-label">Avg Faithfulness</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgPrecision">-</div>
+                    <div class="stat-label">Avg Precision</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgRagas">-</div>
+                    <div class="stat-label">Avg RAGAS Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function clearRagasResults() {
+            if (!confirm('Clear all RAGAS evaluation results? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/ragas/reset`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    // Reset displayed values
+                    document.getElementById('totalEvals').textContent = '0';
+                    document.getElementById('avgFaith').textContent = '-';
+                    document.getElementById('avgPrecision').textContent = '-';
+                    document.getElementById('avgRagas').textContent = '-';
+
+                    alert('RAGAS results cleared!');
+                } else {
+                    alert('Failed to clear results');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        // Dark mode toggle
+        const themeToggle = document.getElementById("themeToggle");
+        const root = document.documentElement;
+
+        const savedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+        if (savedTheme) {
+            root.setAttribute("data-theme", savedTheme);
+        } else if (prefersDark) {
+            root.setAttribute("data-theme", "dark");
+        }
+
+        function updateToggleText() {
+            const isDark = root.getAttribute("data-theme") === "dark";
+            themeToggle.textContent = isDark ? "☀️ Light mode" : "🌙 Dark mode";
+        }
+        updateToggleText();
+
+        themeToggle.addEventListener("click", () => {
+            const isDark = root.getAttribute("data-theme") === "dark";
+            const newTheme = isDark ? "light" : "dark";
+            root.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+            updateToggleText();
+        });
+        const API_URL = window.location.origin;
+
+        async function runEvaluation() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                showStatus('Please enter a question', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('evalBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Evaluating...';
+
+            showStatus('Querying RAG and running RAGAS evaluation...', 'loading');
+            document.getElementById('resultsSection').classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/ragas/query-and-evaluate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, top_k: 3 })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Evaluation failed');
+                }
+
+                const data = await response.json();
+                displayResults(data);
+                hideStatus();
+                loadAggregateStats();
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Query & Evaluate';
+            }
+        }
+
+        function displayResults(data) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            // Answer
+            document.getElementById('answerText').textContent = data.answer;
+
+            // RAGAS Scores
+            if (data.ragas) {
+                setScore('faithScore', 'faithBar', data.ragas.faithfulness);
+                setScore('precisionScore', 'precisionBar', data.ragas.context_precision);
+                setScore('ragasScore', 'ragasBar', data.ragas.ragas_score);
+
+                document.getElementById('evalTime').textContent =
+                    `Eval: ${data.ragas.eval_time_ms.toFixed(0)}ms`;
+            }
+
+            document.getElementById('responseTime').textContent =
+                `Response: ${data.response_time_ms.toFixed(0)}ms`;
+
+            // Sources
+            const sourcesList = document.getElementById('sourcesList');
+            sourcesList.innerHTML = data.sources.map(source => `
+                <div class="source-item">
+                    <div class="source-similarity">📌 Similarity: ${(source.similarity * 100).toFixed(0)}%</div>
+                    <div>${source.preview}</div>
+                </div>
+            `).join('');
+        }
+
+        function setScore(valueId, barId, score) {
+            const valueEl = document.getElementById(valueId);
+            const barEl = document.getElementById(barId);
+
+            const percent = (score * 100).toFixed(0);
+            valueEl.textContent = percent + '%';
+            barEl.style.width = percent + '%';
+
+            // Color coding
+            let colorClass = 'high';
+            if (score < 0.7) colorClass = 'medium';
+            if (score < 0.5) colorClass = 'low';
+
+            valueEl.className = 'score-value ' + colorClass;
+            barEl.className = 'progress-fill ' + colorClass;
+        }
+
+        async function loadAggregateStats() {
+            try {
+                const response = await fetch(`${API_URL}/ragas/metrics`);
+                const data = await response.json();
+
+                document.getElementById('totalEvals').textContent = data.total_evaluations || 0;
+                document.getElementById('avgFaith').textContent =
+                    data.avg_faithfulness ? (data.avg_faithfulness * 100).toFixed(0) + '%' : '-';
+                document.getElementById('avgPrecision').textContent =
+                    data.avg_context_precision ? (data.avg_context_precision * 100).toFixed(0) + '%' : '-';
+                document.getElementById('avgRagas').textContent =
+                    data.avg_ragas_score ? (data.avg_ragas_score * 100).toFixed(0) + '%' : '-';
+            } catch (e) {
+                console.error('Failed to load aggregate stats:', e);
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.classList.remove('hidden');
+        }
+
+        function hideStatus() {
+            document.getElementById('status').classList.add('hidden');
+        }
+
+        // Load stats on page load
+        window.addEventListener('load', loadAggregateStats);
+    </script>
+</body>
+
+</html>

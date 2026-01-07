@@ -7,154 +7,280 @@
     <title>RAG Evaluation Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
     <style>
+        /* -----------------------------
+           Design tokens (matching index.html)
+        ------------------------------*/
+        :root {
+            --surface: #ffffff;
+            --surface-subtle: #fafafa;
+            --bg-main: #f5f7fb;
+            --card-bg: #ffffff;
+            --accent: #2563eb;
+            --accent-soft: #eff6ff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-soft: #e5e7eb;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #f59e0b;
+            --info: #2563eb;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        /* Dark mode */
+        [data-theme="dark"] {
+            --surface: #1f2937;
+            --surface-subtle: #111827;
+            --bg-main: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #60a5fa;
+            --accent-soft: #1e3a5f;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-soft: #334155;
+        }
+
+        /* -----------------------------
+           Reset
+        ------------------------------*/
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* -----------------------------
+           Base
+        ------------------------------*/
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-main);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
+            color: var(--text-main);
         }
 
+        /* -----------------------------
+           Container
+        ------------------------------*/
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 30px;
+        /* -----------------------------
+           Header
+        ------------------------------*/
+        header {
             text-align: center;
+            margin-bottom: 36px;
         }
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
         }
 
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+        header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
         }
 
         .nav-buttons {
             display: flex;
-            gap: 10px;
             justify-content: center;
-            margin-top: 20px;
+            gap: 12px;
             flex-wrap: wrap;
+            margin-bottom: 12px;
         }
 
         .nav-btn {
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--accent);
             color: white;
-            border-radius: 5px;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease, transform 0.15s ease;
+            border: none;
             cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s;
         }
 
-        .nav-btn:hover,
-        .nav-btn.active {
-            background: white;
-            color: #667eea;
+        .nav-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
-        .content {
-            padding: 30px;
+        .nav-btn.secondary {
+            background: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-soft);
         }
 
-        .section {
-            display: none;
+        .nav-btn.secondary:hover {
+            background: var(--surface-subtle);
         }
 
-        .section.active {
-            display: block;
-            animation: fadeIn 0.3s;
+        [data-theme="dark"] .nav-btn {
+            background: #60a5fa;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+        [data-theme="dark"] .nav-btn:hover {
+            background: #3b82f6;
         }
 
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            z-index: 100;
+        }
+
+        /* -----------------------------
+           Tab Navigation
+        ------------------------------*/
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border-soft);
+            color: var(--text-main);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn:hover {
+            background: var(--surface-subtle);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* -----------------------------
+           Cards
+        ------------------------------*/
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-main);
+        }
+
+        /* -----------------------------
+           Metrics Grid
+        ------------------------------*/
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .metric-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--accent);
             color: white;
-            padding: 25px;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: var(--radius-md);
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
+            transition: transform 0.15s ease;
         }
 
         .metric-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-2px);
+        }
+
+        .metric-card.success {
+            background: var(--success);
+        }
+
+        .metric-card.warning {
+            background: var(--warning);
+        }
+
+        .metric-card.error {
+            background: var(--error);
         }
 
         .metric-label {
-            font-size: 0.9em;
+            font-size: 0.8rem;
             opacity: 0.9;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .metric-value {
-            font-size: 2em;
-            font-weight: bold;
+            font-size: 1.8rem;
+            font-weight: 700;
         }
 
         .metric-unit {
-            font-size: 0.7em;
+            font-size: 0.75rem;
             opacity: 0.8;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
+        /* -----------------------------
+           Charts
+        ------------------------------*/
         .chart-container {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-            min-height: 400px;
+            background: var(--surface);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 20px;
+            min-height: 350px;
         }
 
         .chart-title {
-            font-size: 1.3em;
+            font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 15px;
-            color: #333;
+            margin-bottom: 12px;
+            color: var(--text-main);
         }
 
         .two-column {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
         }
 
         @media (max-width: 900px) {
@@ -163,31 +289,49 @@
             }
         }
 
-        .status-good {
-            color: #2ecc71;
+        /* -----------------------------
+           Sections
+        ------------------------------*/
+        .section {
+            display: none;
         }
 
-        .status-warning {
-            color: #f39c12;
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        .status-critical {
-            color: #e74c3c;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
+        /* -----------------------------
+           Info Box
+        ------------------------------*/
         .info-box {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
+            background: var(--accent-soft);
+            border-left: 4px solid var(--accent);
+            padding: 14px;
+            border-radius: var(--radius-sm);
             margin-bottom: 20px;
-            border-radius: 5px;
         }
 
         .info-box p {
-            color: #555;
-            margin: 5px 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
+        /* -----------------------------
+           Button Group
+        ------------------------------*/
         .button-group {
             display: flex;
             gap: 10px;
@@ -196,43 +340,49 @@
         }
 
         .btn {
-            padding: 10px 20px;
-            background: #667eea;
+            padding: 10px 18px;
+            background: var(--accent);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
         }
 
         .btn:hover {
-            background: #764ba2;
+            background: #1d4ed8;
         }
 
         .btn-secondary {
-            background: #95a5a6;
+            background: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-soft);
         }
 
         .btn-secondary:hover {
-            background: #7f8c8d;
+            background: var(--surface-subtle);
         }
 
+        /* -----------------------------
+           Loading
+        ------------------------------*/
         .loading {
             display: none;
             text-align: center;
-            padding: 20px;
-            color: #667eea;
+            padding: 40px;
+            color: var(--accent);
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid var(--border-soft);
+            border-top: 4px solid var(--accent);
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
@@ -245,272 +395,287 @@
             }
         }
 
-        .failure-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
+        /* -----------------------------
+           Failure Items
+        ------------------------------*/
         .failure-item {
-            background: #f8f9fa;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            border-left: 4px solid #e74c3c;
+            background: var(--surface-subtle);
+            border-left: 4px solid var(--error);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: var(--radius-sm);
         }
 
         .failure-item-query {
-            font-weight: 600;
-            color: #333;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 4px;
         }
 
         .failure-item-score {
-            font-size: 0.9em;
-            color: #e74c3c;
-            margin-top: 5px;
+            font-size: 0.8rem;
+            color: var(--error);
+            font-weight: 500;
+        }
+
+        /* -----------------------------
+           Status Colors
+        ------------------------------*/
+        .status-good {
+            color: var(--success);
+        }
+
+        .status-warning {
+            color: var(--warning);
+        }
+
+        .status-critical {
+            color: var(--error);
+        }
+
+        /* Plotly chart background fix for dark mode */
+        [data-theme="dark"] .js-plotly-plot .plotly .bg {
+            fill: var(--surface) !important;
         }
     </style>
 </head>
 
 <body>
+    <button class="theme-toggle" id="themeToggle">🌙 Dark mode</button>
+
     <div class="container">
-        <div class="header">
-            <h1>🔍 RAG Evaluation Dashboard</h1>
-            <p>Comprehensive evaluation metrics for your Retrieval-Augmented Generation system</p>
+        <header>
+            <h1>📊 RAG Evaluation Dashboard</h1>
+            <p>Real-time metrics and analysis for your RAG pipeline</p>
             <div class="nav-buttons">
-                <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
-                <button class="nav-btn" onclick="showSection('retrieval')">Retrieval</button>
-                <button class="nav-btn" onclick="showSection('generation')">Generation</button>
-                <button class="nav-btn" onclick="showSection('faithfulness')">Faithfulness</button>
-                <button class="nav-btn" onclick="showSection('performance')">Performance</button>
-                <button class="nav-btn" onclick="showSection('failures')">Failures</button>
+                <a href="/" class="nav-btn secondary">← Back to Main</a>
+                <a href="/ragas-demo" class="nav-btn">🔬 RAGAS Evaluation</a>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showSection('overview')">Overview</button>
+            <button class="tab-btn" onclick="showSection('retrieval')">Retrieval</button>
+            <button class="tab-btn" onclick="showSection('generation')">Generation</button>
+            <button class="tab-btn" onclick="showSection('faithfulness')">Faithfulness</button>
+            <button class="tab-btn" onclick="showSection('performance')">Performance</button>
+            <button class="tab-btn" onclick="showSection('failures')">Failures</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading evaluation data...</p>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section active" id="overview">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Evaluations</div>
+                    <div class="metric-value" id="totalEvaluations">0</div>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-label">Avg Precision</div>
+                    <div class="metric-value" id="overviewPrecision">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Recall</div>
+                    <div class="metric-value" id="overviewRecall">-</div>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-label">Avg BERTScore</div>
+                    <div class="metric-value" id="overviewBert">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Faithfulness</div>
+                    <div class="metric-value" id="overviewFaith">-</div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-label">Hallucination Rate</div>
+                    <div class="metric-value" id="overviewHalluc">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Latency</div>
+                    <div class="metric-value" id="overviewLatency">-</div>
+                    <div class="metric-unit">ms</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">MRR</div>
+                    <div class="metric-value" id="overviewMRR">-</div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" onclick="loadMetrics()">🔄 Refresh</button>
+                <button class="btn btn-secondary" onclick="exportResults()">📥 Export CSV</button>
+                <button class="btn btn-secondary" onclick="clearResults()">🗑️ Clear Results</button>
+            </div>
+
+            <div class="info-box">
+                <p><strong>How to use:</strong> This dashboard shows evaluation metrics from your RAG pipeline.
+                    Use the tabs above to explore different aspects of performance.
+                    Try the <a href="/ragas-demo">RAGAS Evaluation</a> to run live evaluations.</p>
             </div>
         </div>
 
-        <div class="content">
-            <!-- Overview Section -->
-            <div id="overview" class="section active">
-                <div class="button-group">
-                    <button class="btn" onclick="loadMetrics()">🔄 Refresh Metrics</button>
-                    <button class="btn btn-secondary" onclick="exportResults()">📥 Export Results</button>
-                    <button class="btn btn-secondary" onclick="clearResults()">🗑️ Clear Results</button>
+        <!-- Retrieval Section -->
+        <div class="section" id="retrieval">
+            <div class="card">
+                <h2>Retrieval Metrics Over Time</h2>
+                <div class="chart-container" id="retrievalChart"></div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">MRR</div>
+                    <div class="metric-value" id="mrrValue">-</div>
                 </div>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    Loading metrics...
+                <div class="metric-card success">
+                    <div class="metric-label">Avg Precision</div>
+                    <div class="metric-value" id="avgPrecision">-</div>
                 </div>
-
-                <div class="metrics-grid" id="metricsGrid">
-                    <!-- Populated by JavaScript -->
-                </div>
-
-                <div class="info-box">
-                    <p><strong>📊 Total Evaluations:</strong> <span id="totalEvals">0</span></p>
-                    <p><strong>📅 Last Updated:</strong> <span id="lastUpdated">--</span></p>
-                    <p><strong>✅ System Status:</strong> <span id="systemStatus">Initializing...</span></p>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Recall</div>
+                    <div class="metric-value" id="avgRecall">-</div>
                 </div>
             </div>
+        </div>
 
-            <!-- Retrieval Section -->
-            <div id="retrieval" class="section">
-                <h2 class="chart-title">📈 Retrieval Quality Analysis</h2>
+        <!-- Generation Section -->
+        <div class="section" id="generation">
+            <div class="two-column">
+                <div class="card">
+                    <h2>Generation Quality Over Time</h2>
+                    <div class="chart-container" id="generationChart"></div>
+                </div>
+                <div class="card">
+                    <h2>Average Scores</h2>
+                    <div class="chart-container" id="generationBars"></div>
+                </div>
+            </div>
+        </div>
 
-                <div class="two-column">
-                    <div class="chart-container">
-                        <div class="chart-title">Precision & Recall Trend</div>
-                        <div id="retrievalChart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <div class="chart-title">Key Metrics</div>
-                        <div style="padding: 20px;">
-                            <p><strong>Mean Reciprocal Rank (MRR):</strong> <span id="mrrValue">--</span></p>
-                            <p style="margin-top: 10px; font-size: 0.9em;">Measures ranking quality of retrieved
-                                documents. Higher is better (ideal: 1.0)</p>
-                            <hr style="margin: 15px 0;">
-                            <p><strong>Avg Precision:</strong> <span id="avgPrecision">--</span></p>
-                            <p style="margin-top: 10px;"><strong>Avg Recall:</strong> <span id="avgRecall">--</span></p>
+        <!-- Faithfulness Section -->
+        <div class="section" id="faithfulness">
+            <div class="two-column">
+                <div class="card">
+                    <h2>Hallucination Rate</h2>
+                    <div class="chart-container" id="hallucinationChart"></div>
+                </div>
+                <div class="card">
+                    <h2>Faithfulness Over Time</h2>
+                    <div class="chart-container" id="faithfulnessChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Section -->
+        <div class="section" id="performance">
+            <div class="card">
+                <h2>Latency Distribution</h2>
+                <div class="chart-container" id="latencyChart"></div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">P50 Latency</div>
+                    <div class="metric-value" id="p50Value">-</div>
+                    <div class="metric-unit">ms</div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-label">P95 Latency</div>
+                    <div class="metric-value" id="p95Value">-</div>
+                    <div class="metric-unit">ms</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">P99 Latency</div>
+                    <div class="metric-value" id="p99Value">-</div>
+                    <div class="metric-unit">ms</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Cost per Query</div>
+                    <div class="metric-value" id="costValue">-</div>
+                    <div class="metric-unit">USD</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Failures Section -->
+        <div class="section" id="failures">
+            <div class="two-column">
+                <div class="card">
+                    <h2>Failure Modes</h2>
+                    <div class="chart-container" id="failureChart"></div>
+                </div>
+                <div class="card">
+                    <h2>Failure Counts</h2>
+                    <div class="metrics-grid" style="margin-top: 20px;">
+                        <div class="metric-card error">
+                            <div class="metric-label">Total Failures</div>
+                            <div class="metric-value" id="totalFailures">0</div>
+                        </div>
+                        <div class="metric-card error">
+                            <div class="metric-label">Hallucinations</div>
+                            <div class="metric-value" id="hallCount">0</div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-label">Low Retrieval</div>
+                            <div class="metric-value" id="retCount">0</div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-label">Low Generation</div>
+                            <div class="metric-value" id="genCount">0</div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Generation Section -->
-            <div id="generation" class="section">
-                <h2 class="chart-title">🎯 Generation Quality Metrics</h2>
-
-                <div class="two-column">
-                    <div class="chart-container">
-                        <div class="chart-title">Quality Score Trends</div>
-                        <div id="generationChart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <div class="chart-title">Average Scores</div>
-                        <div id="generationBars"></div>
-                    </div>
-                </div>
-
-                <div class="info-box">
-                    <p><strong>ROUGE-L:</strong> Token-level overlap between generated and reference answers (0-1)</p>
-                    <p><strong>BERTScore:</strong> Semantic similarity using contextual embeddings (0-1)</p>
-                    <p><strong>Answer Relevance:</strong> How relevant is the answer to the query (0-1)</p>
-                </div>
-            </div>
-
-            <!-- Faithfulness Section -->
-            <div id="faithfulness" class="section">
-                <h2 class="chart-title">✅ Faithfulness & Source Attribution</h2>
-
-                <div class="two-column">
-                    <div class="chart-container">
-                        <div class="chart-title">Hallucination Distribution</div>
-                        <div id="hallucinationChart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <div class="chart-title">Faithfulness Trend</div>
-                        <div id="faithfulnessChart"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Performance Section -->
-            <div id="performance" class="section">
-                <h2 class="chart-title">⚡ Performance & Cost Analysis</h2>
-
-                <div class="two-column">
-                    <div class="chart-container">
-                        <div class="chart-title">Latency vs Cost</div>
-                        <div id="latencyChart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <div class="chart-title">Latency Percentiles</div>
-                        <div id="percentileChart"></div>
-                    </div>
-                </div>
-
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-label">P50 Latency</div>
-                        <div class="metric-value" id="p50Value">--</div>
-                        <div class="metric-unit">milliseconds</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">P95 Latency</div>
-                        <div class="metric-value" id="p95Value">--</div>
-                        <div class="metric-unit">milliseconds</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">P99 Latency</div>
-                        <div class="metric-value" id="p99Value">--</div>
-                        <div class="metric-unit">milliseconds</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Avg Cost</div>
-                        <div class="metric-value" id="costValue">--</div>
-                        <div class="metric-unit">cents per query</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Failures Section -->
-            <div id="failures" class="section">
-                <h2 class="chart-title">❌ Failure Mode Analysis</h2>
-
-                <div class="two-column">
-                    <div class="chart-container">
-                        <div class="chart-title">Failure Distribution</div>
-                        <div id="failureChart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <div class="chart-title">Failure Summary</div>
-                        <div style="padding: 20px;">
-                            <p><strong>Total Failures:</strong> <span id="totalFailures">0</span></p>
-                            <p style="margin-top: 15px;"><strong>Hallucinations:</strong> <span id="hallCount">0</span>
-                            </p>
-                            <p><strong>Low Retrieval:</strong> <span id="retCount">0</span></p>
-                            <p><strong>Low Generation:</strong> <span id="genCount">0</span></p>
-                            <p><strong>Low Faithfulness:</strong> <span id="faithCount">0</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <div class="chart-title">Recent Failures</div>
-                    <div class="failure-list" id="failureList"></div>
+            <div class="card">
+                <h2>Recent Failures</h2>
+                <div id="failureList">
+                    <p style="color: var(--text-muted); padding: 20px;">No failures detected! 🎉</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        const API_URL = window.location.origin;
         let metricsData = null;
         let timeseriesData = null;
         let failureData = null;
 
+        // Tab navigation
         function showSection(sectionId) {
-            // Hide all sections
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-            // Show selected section
             document.getElementById(sectionId).classList.add('active');
             event.target.classList.add('active');
 
-            // Load data for this section
-            if (sectionId === 'overview') loadMetrics();
-            else if (sectionId === 'retrieval') loadRetrievalCharts();
-            else if (sectionId === 'generation') loadGenerationCharts();
-            else if (sectionId === 'faithfulness') loadFaithfulnessCharts();
-            else if (sectionId === 'performance') loadPerformanceCharts();
-            else if (sectionId === 'failures') loadFailureCharts();
+            // Load section-specific data
+            switch (sectionId) {
+                case 'retrieval': loadRetrievalCharts(); break;
+                case 'generation': loadGenerationCharts(); break;
+                case 'faithfulness': loadFaithfulnessCharts(); break;
+                case 'performance': loadPerformanceCharts(); break;
+                case 'failures': loadFailureCharts(); break;
+            }
         }
 
         async function loadMetrics() {
             showLoading(true);
             try {
-                const response = await fetch('/evaluation/metrics');
+                const response = await fetch(`${API_URL}/evaluation/metrics`);
                 metricsData = await response.json();
 
-                // Update overview cards
-                const metricsGrid = document.getElementById('metricsGrid');
-                metricsGrid.innerHTML = `
-                    <div class="metric-card">
-                        <div class="metric-label">Total Evaluations</div>
-                        <div class="metric-value">${metricsData.total_evaluations}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Avg Precision</div>
-                        <div class="metric-value">${metricsData.retrieval_precision_mean.toFixed(3)}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Avg BERTScore</div>
-                        <div class="metric-value">${metricsData.bert_score_mean.toFixed(3)}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Faithfulness</div>
-                        <div class="metric-value">${metricsData.faithfulness_mean.toFixed(3)}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Hallucination Rate</div>
-                        <div class="metric-value">${(metricsData.hallucination_rate * 100).toFixed(1)}%</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Avg Latency</div>
-                        <div class="metric-value">${metricsData.latency_mean.toFixed(0)}</div>
-                        <div class="metric-unit">ms</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">MRR</div>
-                        <div class="metric-value">${metricsData.mrr.toFixed(3)}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Cost/Query</div>
-                        <div class="metric-value">$${(metricsData.cost_per_query / 100).toFixed(4)}</div>
-                    </div>
-                `;
-
-                document.getElementById('totalEvals').textContent = metricsData.total_evaluations;
-                document.getElementById('lastUpdated').textContent = new Date(metricsData.timestamp).toLocaleString();
-                document.getElementById('systemStatus').textContent = metricsData.hallucination_rate < 0.15 ? '✅ Healthy' : '⚠️ Issues Detected';
+                // Update overview
+                document.getElementById('totalEvaluations').textContent = metricsData.total_evaluations;
+                document.getElementById('overviewPrecision').textContent = metricsData.retrieval_precision_mean?.toFixed(3) || '-';
+                document.getElementById('overviewRecall').textContent = metricsData.retrieval_recall_mean?.toFixed(3) || '-';
+                document.getElementById('overviewBert').textContent = metricsData.bert_score_mean?.toFixed(3) || '-';
+                document.getElementById('overviewFaith').textContent = metricsData.faithfulness_mean?.toFixed(3) || '-';
+                document.getElementById('overviewHalluc').textContent = ((metricsData.hallucination_rate || 0) * 100).toFixed(1) + '%';
+                document.getElementById('overviewLatency').textContent = metricsData.latency_mean?.toFixed(0) || '-';
+                document.getElementById('overviewMRR').textContent = metricsData.mrr?.toFixed(3) || '-';
 
             } catch (e) {
                 console.error('Error loading metrics:', e);
@@ -520,11 +685,13 @@
 
         async function loadRetrievalCharts() {
             try {
-                const response = await fetch('/evaluation/timeseries');
-                timeseriesData = await response.json();
+                if (!timeseriesData) {
+                    const response = await fetch(`${API_URL}/evaluation/timeseries`);
+                    timeseriesData = await response.json();
+                }
 
                 if (!timeseriesData.query_idx || timeseriesData.query_idx.length === 0) {
-                    document.getElementById('retrievalChart').innerHTML = '<p style="padding: 20px;">No data yet</p>';
+                    document.getElementById('retrievalChart').innerHTML = '<p style="padding: 40px; text-align: center; color: var(--text-muted);">No data yet. Run some evaluations first.</p>';
                     return;
                 }
 
@@ -533,7 +700,7 @@
                     y: timeseriesData.retrieval_precision,
                     name: 'Precision',
                     mode: 'lines+markers',
-                    line: { color: '#667eea' }
+                    line: { color: '#2563eb' }
                 };
 
                 const trace2 = {
@@ -541,21 +708,25 @@
                     y: timeseriesData.retrieval_recall,
                     name: 'Recall',
                     mode: 'lines+markers',
-                    line: { color: '#764ba2' }
+                    line: { color: '#16a34a' }
                 };
 
-                Plotly.newPlot('retrievalChart', [trace1, trace2], {
-                    title: '',
+                const layout = {
                     xaxis: { title: 'Query Index' },
                     yaxis: { title: 'Score' },
                     hovermode: 'x unified',
-                    responsive: true
-                });
+                    responsive: true,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: getComputedStyle(document.body).getPropertyValue('--text-main') }
+                };
+
+                Plotly.newPlot('retrievalChart', [trace1, trace2], layout);
 
                 if (metricsData) {
-                    document.getElementById('mrrValue').textContent = metricsData.mrr.toFixed(3);
-                    document.getElementById('avgPrecision').textContent = metricsData.retrieval_precision_mean.toFixed(3);
-                    document.getElementById('avgRecall').textContent = metricsData.retrieval_recall_mean.toFixed(3);
+                    document.getElementById('mrrValue').textContent = metricsData.mrr?.toFixed(3) || '-';
+                    document.getElementById('avgPrecision').textContent = metricsData.retrieval_precision_mean?.toFixed(3) || '-';
+                    document.getElementById('avgRecall').textContent = metricsData.retrieval_recall_mean?.toFixed(3) || '-';
                 }
 
             } catch (e) {
@@ -566,7 +737,7 @@
         async function loadGenerationCharts() {
             try {
                 if (!timeseriesData) {
-                    const response = await fetch('/evaluation/timeseries');
+                    const response = await fetch(`${API_URL}/evaluation/timeseries`);
                     timeseriesData = await response.json();
                 }
 
@@ -577,7 +748,7 @@
                     y: timeseriesData.rouge_l,
                     name: 'ROUGE-L',
                     mode: 'lines+markers',
-                    line: { color: '#f39c12' }
+                    line: { color: '#f59e0b' }
                 };
 
                 const trace2 = {
@@ -585,23 +756,34 @@
                     y: timeseriesData.bert_score,
                     name: 'BERTScore',
                     mode: 'lines+markers',
-                    line: { color: '#2ecc71' }
+                    line: { color: '#16a34a' }
                 };
 
-                Plotly.newPlot('generationChart', [trace1, trace2], {
-                    title: '', xaxis: { title: 'Query Index' }, yaxis: { title: 'Score' }, hovermode: 'x unified', responsive: true
-                });
+                const layout = {
+                    xaxis: { title: 'Query Index' },
+                    yaxis: { title: 'Score' },
+                    hovermode: 'x unified',
+                    responsive: true,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)'
+                };
+
+                Plotly.newPlot('generationChart', [trace1, trace2], layout);
 
                 if (metricsData) {
                     const barsTrace = {
                         x: ['ROUGE-L', 'BERTScore', 'Answer Relevance'],
                         y: [metricsData.rouge_l_mean, metricsData.bert_score_mean, metricsData.answer_relevance_mean],
                         type: 'bar',
-                        marker: { color: ['#f39c12', '#2ecc71', '#3498db'] }
+                        marker: { color: ['#f59e0b', '#16a34a', '#2563eb'] }
                     };
 
                     Plotly.newPlot('generationBars', [barsTrace], {
-                        title: '', yaxis: { title: 'Score' }, responsive: true, showlegend: false
+                        yaxis: { title: 'Score' },
+                        responsive: true,
+                        showlegend: false,
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)'
                     });
                 }
 
@@ -614,21 +796,24 @@
             try {
                 if (!metricsData) await loadMetrics();
                 if (!timeseriesData) {
-                    const response = await fetch('/evaluation/timeseries');
+                    const response = await fetch(`${API_URL}/evaluation/timeseries`);
                     timeseriesData = await response.json();
                 }
 
-                const hallRate = metricsData.hallucination_rate;
+                const hallRate = metricsData.hallucination_rate || 0;
                 const faithfulRate = 1 - hallRate;
 
                 const pieTrace = {
                     labels: ['Faithful Answers', 'Hallucinations'],
                     values: [faithfulRate * 100, hallRate * 100],
                     type: 'pie',
-                    marker: { colors: ['#2ecc71', '#e74c3c'] }
+                    marker: { colors: ['#16a34a', '#dc2626'] }
                 };
 
-                Plotly.newPlot('hallucinationChart', [pieTrace], { title: '', responsive: true });
+                Plotly.newPlot('hallucinationChart', [pieTrace], {
+                    responsive: true,
+                    paper_bgcolor: 'rgba(0,0,0,0)'
+                });
 
                 if (timeseriesData.query_idx && timeseriesData.query_idx.length > 0) {
                     const faithTrace = {
@@ -636,12 +821,16 @@
                         y: timeseriesData.faithfulness,
                         name: 'Faithfulness',
                         mode: 'lines+markers',
-                        line: { color: '#16a085', width: 2 },
+                        line: { color: '#2563eb', width: 2 },
                         marker: { size: 6 }
                     };
 
                     Plotly.newPlot('faithfulnessChart', [faithTrace], {
-                        title: '', xaxis: { title: 'Query Index' }, yaxis: { title: 'Score (0-1)' }, responsive: true
+                        xaxis: { title: 'Query Index' },
+                        yaxis: { title: 'Score (0-1)' },
+                        responsive: true,
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)'
                     });
                 }
 
@@ -654,28 +843,32 @@
             try {
                 if (!metricsData) await loadMetrics();
                 if (!timeseriesData) {
-                    const response = await fetch('/evaluation/timeseries');
+                    const response = await fetch(`${API_URL}/evaluation/timeseries`);
                     timeseriesData = await response.json();
                 }
 
                 if (timeseriesData.query_idx && timeseriesData.query_idx.length > 0) {
                     const latencyTrace = {
-                        x: timeseriesData.latency_ms,
+                        x: timeseriesData.query_idx,
                         y: timeseriesData.latency_ms,
-                        mode: 'markers',
-                        marker: { size: 8, color: timeseriesData.query_idx, colorscale: 'Viridis', showscale: true },
-                        type: 'scatter'
+                        mode: 'lines+markers',
+                        line: { color: '#2563eb' },
+                        marker: { size: 6 }
                     };
 
                     Plotly.newPlot('latencyChart', [latencyTrace], {
-                        title: '', xaxis: { title: 'Query Index' }, yaxis: { title: 'Latency (ms)' }, responsive: true
+                        xaxis: { title: 'Query Index' },
+                        yaxis: { title: 'Latency (ms)' },
+                        responsive: true,
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)'
                     });
                 }
 
-                document.getElementById('p50Value').textContent = metricsData.latency_p50.toFixed(0);
-                document.getElementById('p95Value').textContent = metricsData.latency_p95.toFixed(0);
-                document.getElementById('p99Value').textContent = metricsData.latency_p99.toFixed(0);
-                document.getElementById('costValue').textContent = (metricsData.cost_per_query / 100).toFixed(4);
+                document.getElementById('p50Value').textContent = metricsData.latency_p50?.toFixed(0) || '-';
+                document.getElementById('p95Value').textContent = metricsData.latency_p95?.toFixed(0) || '-';
+                document.getElementById('p99Value').textContent = metricsData.latency_p99?.toFixed(0) || '-';
+                document.getElementById('costValue').textContent = metricsData.cost_per_query ? (metricsData.cost_per_query / 100).toFixed(4) : '-';
 
             } catch (e) {
                 console.error('Error loading performance charts:', e);
@@ -684,25 +877,28 @@
 
         async function loadFailureCharts() {
             try {
-                const response = await fetch('/evaluation/failures');
+                const response = await fetch(`${API_URL}/evaluation/failures`);
                 failureData = await response.json();
 
                 const failureChart = {
                     x: Object.keys(failureData.failure_modes),
                     y: Object.values(failureData.failure_modes),
                     type: 'bar',
-                    marker: { color: '#e74c3c' }
+                    marker: { color: '#dc2626' }
                 };
 
                 Plotly.newPlot('failureChart', [failureChart], {
-                    title: '', yaxis: { title: 'Count' }, responsive: true, showlegend: false
+                    yaxis: { title: 'Count' },
+                    responsive: true,
+                    showlegend: false,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)'
                 });
 
                 document.getElementById('totalFailures').textContent = failureData.total_failures;
                 document.getElementById('hallCount').textContent = failureData.failure_modes.hallucinations;
                 document.getElementById('retCount').textContent = failureData.failure_modes.low_retrieval;
                 document.getElementById('genCount').textContent = failureData.failure_modes.low_generation;
-                document.getElementById('faithCount').textContent = failureData.failure_modes.low_faithfulness;
 
                 // Show recent failures
                 const failureList = document.getElementById('failureList');
@@ -713,10 +909,13 @@
                 ];
 
                 allFailures.forEach(f => {
-                    html += `<div class="failure-item"><div class="failure-item-query">${f.query}</div><div class="failure-item-score">Score: ${f.score.toFixed(3)}</div></div>`;
+                    html += `<div class="failure-item">
+                        <div class="failure-item-query">${f.query}</div>
+                        <div class="failure-item-score">Score: ${f.score.toFixed(3)}</div>
+                    </div>`;
                 });
 
-                failureList.innerHTML = html || '<p style="padding: 20px; color: #999;">No failures detected! 🎉</p>';
+                failureList.innerHTML = html || '<p style="padding: 20px; color: var(--text-muted);">No failures detected! 🎉</p>';
 
             } catch (e) {
                 console.error('Error loading failure analysis:', e);
@@ -729,7 +928,7 @@
 
         async function exportResults() {
             try {
-                const response = await fetch('/evaluation/export');
+                const response = await fetch(`${API_URL}/evaluation/export`);
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -745,7 +944,7 @@
         async function clearResults() {
             if (confirm('Are you sure you want to clear all results?')) {
                 try {
-                    await fetch('/evaluation/reset', { method: 'POST' });
+                    await fetch(`${API_URL}/evaluation/reset`, { method: 'POST' });
                     metricsData = null;
                     timeseriesData = null;
                     failureData = null;
@@ -756,6 +955,33 @@
                 }
             }
         }
+
+        // Dark mode toggle
+        const themeToggle = document.getElementById("themeToggle");
+        const root = document.documentElement;
+
+        const savedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+        if (savedTheme) {
+            root.setAttribute("data-theme", savedTheme);
+        } else if (prefersDark) {
+            root.setAttribute("data-theme", "dark");
+        }
+
+        function updateToggleText() {
+            const isDark = root.getAttribute("data-theme") === "dark";
+            themeToggle.textContent = isDark ? "☀️ Light mode" : "🌙 Dark mode";
+        }
+        updateToggleText();
+
+        themeToggle.addEventListener("click", () => {
+            const isDark = root.getAttribute("data-theme") === "dark";
+            const newTheme = isDark ? "light" : "dark";
+            root.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+            updateToggleText();
+        });
 
         // Load metrics on page load
         window.addEventListener('load', loadMetrics);
