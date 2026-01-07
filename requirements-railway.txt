@@ -12,3 +12,6 @@ numpy>=2.3.5
 pandas>=2.3.3
 # sentence-transformers will be installed at runtime if needed
 sentence-transformers>=5.2.0
+ragas
+langchain-groq
+langchain-openai
